@@ -6,6 +6,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.support.ui import Select
 
 
 # load recorded actions
@@ -16,7 +17,7 @@ with open("actions.json") as f:
 # start browser
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
 
-driver.get("https://google.com")
+driver.get("https://the-internet.herokuapp.com/")
 
 def merge_inputs(actions):
 
@@ -62,6 +63,9 @@ def run_action(action):
     action_type = action["type"]
     selector = action["selector"]
 
+    if action_type == "redirect":
+        driver.get(action["url"])
+
     element = driver.find_element(By.CSS_SELECTOR, selector)
 
     if action_type == "click":
@@ -70,6 +74,10 @@ def run_action(action):
     elif action_type == "input":
         element.clear()
         element.send_keys(action["value"])
+
+    elif action_type == "select":
+        select = Select(element)
+        select.select_by_value(action["value"])
 
 actions = merge_inputs(actions)
 for action in actions:

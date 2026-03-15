@@ -118,7 +118,7 @@ document.addEventListener("input", (e) => {
 
     highlight(e.target);
     sendAction({
-      type: "input",
+      type: e.target.type != "select-one" ? "input" : "select",
       selector: getCssSelector(e.target),
       value: e.target.value
     });
