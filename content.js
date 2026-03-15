@@ -1,3 +1,5 @@
+let lastActionTime = Date.now();
+
 function getCssSelector(el) {
 
   if (!(el instanceof Element)) return;
@@ -80,6 +82,11 @@ function highlight(el) {
 }
 
 function sendAction(action) {
+  const now = Date.now();
+  const delta = (now - lastActionTime) / 1000;
+
+  lastActionTime = now;
+  action.time = delta;
 
   chrome.runtime.sendMessage({
     type: "action",

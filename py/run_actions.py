@@ -53,12 +53,33 @@ def merge_inputs(actions):
             i = j
             continue
 
-        merged.append(action)
-        i += 1
 
+        selector = action["selector"]
+        last_type = action["type"]
+        last_value = action["value"] if "value" in action else None
+
+        j = i + 1
+        # if click check for select on same selector
+        while j < len(actions) and last_type == "click" and (actions[j]["type"] == "select" or actions[j]["type"] == "click") and actions[j]["selector"] == selector:
+            last_value = action["value"] if "value" in action else None
+            last_type = actions[j]["type"]
+            if (last_type == "select"):
+                break
+            
+            j += 1
+
+        merged.append({
+            "type": last_type,
+            "selector": selector,
+            "value": last_value
+        })
+
+        i = j
     return merged
 
 def run_action(action):
+    delay = action.get("time", 0)
+    time.sleep(delay)
 
     action_type = action["type"]
     selector = action["selector"]
