@@ -38,3 +38,10 @@ document.getElementById("clear").addEventListener("click", () => {
   chrome.storage.local.set({ actions: [] });
   document.getElementById("output").textContent = "";
 });
+
+document.getElementById("copy").addEventListener("click", () => {
+  chrome.storage.local.get("actions", (data) => {
+    const actions = data.actions || [];
+    navigator.clipboard.writeText(JSON.stringify(actions.map((action) => action.data), null, 2));
+  });
+});
