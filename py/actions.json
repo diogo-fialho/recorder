@@ -1,0 +1,44 @@
+[
+  {
+    "selector": "#W0wltc",
+    "type": "click"
+  },
+  {
+    "selector": "#APjFqb",
+    "type": "click"
+  },
+  {
+    "selector": "#APjFqb",
+    "type": "input",
+    "value": "t"
+  },
+  {
+    "selector": "#APjFqb",
+    "type": "input",
+    "value": "te"
+  },
+  {
+    "selector": "#APjFqb",
+    "type": "input",
+    "value": "tes"
+  },
+  {
+    "selector": "#APjFqb",
+    "type": "input",
+    "value": "test"
+  },
+  {
+    "selector": "#APjFqb",
+    "type": "input",
+    "value": "teste"
+  },
+  {
+    "selector": "#APjFqb",
+    "type": "input",
+    "value": "testes"
+  },
+  {
+    "selector": "div.L3eUgb:nth-of-type(2) > div.o3j99.ikrT4e.om7nvf:nth-of-type(4) > form > div:nth-of-type(1) > div.A8SBwf.emcav:nth-of-type(1) > div.UUbT9.EyBRub:nth-of-type(2) > div.aajZCb:nth-of-type(4) > div.lJ9FBc:nth-of-type(6) > center > input[name=\"btnK\"].gNO89b:nth-of-type(1)",
+    "type": "click"
+  }
+]
