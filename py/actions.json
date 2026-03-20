@@ -1,19 +1,45 @@
 [
   {
     "selector": "div.row:nth-of-type(2) > div.large-12.columns > ul > li:nth-of-type(11) > a",
+    "time": 6.124,
     "type": "click"
   },
   {
     "selector": "#dropdown",
+    "time": 1.158,
+    "type": "redirect",
+    "url": "https://the-internet.herokuapp.com/dropdown"
+  },
+  {
+    "selector": "#dropdown",
+    "time": 1.158,
     "type": "click"
   },
   {
     "selector": "#dropdown",
+    "time": 1.101,
     "type": "select",
     "value": "1"
   },
   {
     "selector": "#dropdown",
+    "time": 0.001,
+    "type": "click"
+  },
+  {
+    "selector": "#dropdown",
+    "time": 1.601,
+    "type": "click"
+  },
+  {
+    "selector": "#dropdown",
+    "time": 1.069,
+    "type": "select",
+    "value": "2"
+  },
+  {
+    "selector": "#dropdown",
+    "time": 0.001,
     "type": "click"
   }
 ]

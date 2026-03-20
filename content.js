@@ -20,9 +20,9 @@ function getCssSelector(el) {
   const path = [];
 const preferredAttributes = [
     "data-testid",
-    "data-test"
+    "data-test",
     // "data-qa",
-    // "aria-label",
+    "aria-label"
     // "role"
 ];
 
@@ -33,7 +33,7 @@ const preferredAttributes = [
     for (const attr of preferredAttributes) {
       if (el.getAttribute(attr)) {
         selector += `[${attr}="${el.getAttribute(attr)}"]`;
-        path.unshift(selector);
+        // path.unshift(selector);
         break;
       }
     }
@@ -42,11 +42,11 @@ const preferredAttributes = [
       selector += `[name="${el.getAttribute("name")}"]`;
     }
 
-    // 3️⃣ Add classes
-    if (el.className && typeof el.className === "string") {
-      const classes = el.className.trim().split(/\s+/).join(".");
-      if (classes) selector += "." + classes;
-    }
+    // // 3️⃣ Add classes
+    // if (el.className && typeof el.className === "string") {
+    //   const classes = el.className.trim().split(/\s+/).join(".");
+    //   if (classes) selector += "." + classes;
+    // }
 
     // 4️⃣ Add nth-child if needed
     const parent = el.parentNode;
@@ -103,6 +103,31 @@ function isRecording(callback) {
 
 }
 
+function playAction(action) {
+  console.log("Playing action:", action);
+  const element = document.querySelector(action.selector);
+
+  if (!element) {
+    console.warn("Element not found", action.selector);
+    return;
+  }
+
+  if (action.type === "click") {
+    element.click();
+  }
+
+  if (action.type === "input") {
+    element.value = action.value;
+    element.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  if (action.type === "select") {
+    element.value = action.value;
+    element.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+}
+
 document.addEventListener("click", (e) => {
   isRecording((recording) => {
     if (!recording) return;
@@ -153,9 +178,20 @@ window.addEventListener("beforeunload", () => {
 
         highlight(e.target);
         sendAction({
-            type: "navigation",
-            selector: getCssSelector(e.target)
+            type: "redirect",
+            url: window.location.href
         });
     });
 
 }, true);
+
+chrome.runtime.onMessage.addListener((message) => {
+
+    if (message.type === "execute-action") {
+      playAction(message.action);
+    }
+
+    if (message.type === "start-recording") {
+      lastActionTime = Date.now();
+    }
+});
