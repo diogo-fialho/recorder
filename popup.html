@@ -2,18 +2,19 @@
 <html>
 <body>
 
-<div class="contentss" style="width: 300px;">
+<div class="contentss" style="min-width: 300px;">
 
     <h3>Recorder</h3>
+    <div style="display: flex; flex-direction: column;">
+        <button id="togglerecording">Start Recording</button>
+        <button id="export">Show Actions</button>
+        <button id="clear">Clear Actions</button>
+        <button id="copy">Copy Actions</button>
+        <button id="play">Play Recording</button>
+        <button id="restart">Restart Recording</button>
+    </div>
 
-    <button id="togglerecording">Start Recording</button>
-    <button id="export">Export Actions</button>
-    <button id="clear">Clear Actions</button>
-    <button id="copy">Copy Actions</button>
-    <button id="play">Play Recording</button>
-    <button id="restart">Restart Recording</button>
-
-    <textarea id="editor" style="width:100%; height:300px;"></textarea>
+    <textarea id="editor" style="width:100%; height:300px; display: none;"></textarea>
 
 </div>
 <script src="popup.js"></script>

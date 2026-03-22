@@ -28,12 +28,16 @@ toggleBtn.addEventListener("click", () => {
 
 document.getElementById("export").addEventListener("click", () => {
 
-  chrome.storage.local.get("actions", (data) => {
-    const actions = data.actions || [];
-
-    editor.value =
-      JSON.stringify(actions.map((action) => action.data), null, 2);
-  });
+  let editorVisible = editor.style.display != 'none';
+  editor.style.display = editorVisible ? 'none' : 'block';
+  exportBtn.textContent = editorVisible ? "Show Actions" : "Hide Actions";
+  if (!editorVisible) {
+    chrome.storage.local.get("actions", (data) => {
+      const actions = data.actions || [];
+      editor.value =
+        JSON.stringify(actions.map((action) => action.data), null, 2);
+    });
+  }
 
 });
 

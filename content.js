@@ -105,8 +105,13 @@ function isRecording(callback) {
 
 function playAction(action) {
   console.log("Playing action:", action);
+  
+  if (action.type === "redirect") {
+    window.location.href = action.url;
+    return;
+  }
+  
   const element = document.querySelector(action.selector);
-
   if (!element) {
     console.warn("Element not found", action.selector);
     return;
@@ -114,6 +119,9 @@ function playAction(action) {
 
   if (action.type === "click") {
     element.click();
+    if (action.originalType == "INPUT") {
+      element.focus();
+    }
   }
 
   if (action.type === "input") {
@@ -137,7 +145,9 @@ document.addEventListener("click", (e) => {
     highlight(button);
     sendAction({
       type: "click",
-      selector: getCssSelector(button)
+      selector: getCssSelector(button),
+      url: button.href || (button.type == "submit" ? button.closest("form")?.action : undefined),
+      originalType: e.target.nodeName
     });
 
   });
@@ -145,41 +155,47 @@ document.addEventListener("click", (e) => {
 
 document.addEventListener("input", (e) => {
   isRecording((recording) => {
-    console.log("Input event:", e.target, "Recording:", recording);
     if (!recording) return;
+    
+    if (e.target.type != "text") {
+      console.log("Input event:", e.target.type, "Recording:", recording, "value:", e.target.value);
+      highlight(e.target);
+      sendAction({
+        type: e.target.type != "select-one" ? "input" : "select",
+        selector: getCssSelector(e.target),
+        value: e.target.value,
+        originalType: e.target.nodeName
+      });
+    }
+  });
+}, true);
 
-    highlight(e.target);
-    sendAction({
-      type: e.target.type != "select-one" ? "input" : "select",
-      selector: getCssSelector(e.target),
-      value: e.target.value
-    });
+document.addEventListener("keydown", (e) => {
+  isRecording((recording) => {
+    if (e.target.type == "text") {
+      console.log("Input event:", e.target, "Recording:", recording, "value:", e.target.value);
+      if (!recording) return;
+
+      highlight(e.target);
+      sendAction({
+        type: e.target.type != "select-one" ? "input" : "select",
+        selector: getCssSelector(e.target),
+        value: e.target.value,
+        originalType: e.target.nodeName
+      });
+    }
   });
 }, true);
 
 document.addEventListener("submit", (e) => {
     isRecording((recording) => {
-        console.log("Input event:", e.target, "Recording:", recording);
         if (!recording) return;
 
         highlight(e.target);
         sendAction({
             type: "submit",
-            selector: getCssSelector(e.target)
-        });
-    });
-
-}, true);
-
-window.addEventListener("beforeunload", () => {
-    isRecording((recording) => {
-        console.log("Input event:", e.target, "Recording:", recording);
-        if (!recording) return;
-
-        highlight(e.target);
-        sendAction({
-            type: "redirect",
-            url: window.location.href
+            selector: getCssSelector(e.target),
+            originalType: e.target.nodeName
         });
     });
 
@@ -193,5 +209,20 @@ chrome.runtime.onMessage.addListener((message) => {
 
     if (message.type === "start-recording") {
       lastActionTime = Date.now();
+    }
+
+    if (message.type === "navigation") {
+      chrome.runtime.sendMessage({
+        type: "get-last-action"
+      }, (response) => {
+        const lastAction = response.lastAction?.data;
+        if (!lastAction || (lastAction.type !== "click" && lastAction.type !== "submit")) {
+          sendAction({
+            type: "redirect",
+            url: window.location.href,
+            originalType: "NAVIGATION"
+          });
+        }
+      });
     }
 });

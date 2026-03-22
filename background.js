@@ -2,6 +2,7 @@ let actions = [];
 let currentStep = 0;
 let recording = undefined;
 let playing = false;
+let lastActionTime = Date.now();
 
 async function playActions(tabId) {
   console.log("Playing actions:", actions, "Current step:", currentStep, "Playing:", playing);
@@ -12,6 +13,10 @@ async function playActions(tabId) {
     const action = actions[currentStep]?.data;
     currentStep++;
 
+    if (action.time) {
+        await new Promise(r => setTimeout(r, action.time * 1000));
+    }
+
     chrome.tabs.sendMessage(tabId, {
         type: "execute-action",
         action: action
@@ -19,10 +24,6 @@ async function playActions(tabId) {
     
     if (action.type === "redirect") {
         break;
-    }
-
-    if (action.time) {
-        await new Promise(r => setTimeout(r, action.time * 1000));
     }
 
   }
@@ -51,6 +52,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     if (message.type === "get-recording-state") {
         sendResponse({ recording });
+    }
+
+    if (message.type === "get-last-action") {
+        sendResponse({ lastAction: actions[actions.length - 1] });
     }
 
     if (message.type === "actions") {
@@ -90,11 +95,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-    console.log("Tab updated:", tabId, changeInfo);
+  console.log("Tab updated:", tabId, changeInfo);
   if (changeInfo.status === "complete") {
-
-    playActions(tabId);
-
+    if (recording) {
+        chrome.tabs.sendMessage(tabId, {
+            type: "navigation"
+        });
+    } 
+    else {  
+        playActions(tabId);
+    }
   }
 
 });
