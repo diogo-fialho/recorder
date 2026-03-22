@@ -136,6 +136,7 @@ dropzone.addEventListener("drop", (e) => {
         actions: importedActions.map((data) => ({ data }))
       }, () => {
         editor.value = JSON.stringify(importedActions, null, 2);
+        renderActions(importedActions, -1);
       });
     } catch (err) {
       alert("Invalid JSON file");
