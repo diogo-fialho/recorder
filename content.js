@@ -1,4 +1,7 @@
 let lastActionTime = Date.now();
+let lastAction = undefined;
+
+const INPUTS_KEYDOWN = ["input", "textarea", "number", "email", "password"];
 
 function getCssSelector(el) {
 
@@ -81,11 +84,12 @@ function highlight(el) {
   }, 500);
 }
 
-function sendAction(action) {
+function sendAction(action, setDelta = undefined) {
   const now = Date.now();
-  const delta = (now - lastActionTime) / 1000;
+  const delta = setDelta !== undefined ? setDelta : (now - lastActionTime) / 1000;
 
   lastActionTime = now;
+  lastAction = action;
   action.time = delta;
 
   chrome.runtime.sendMessage({
@@ -157,7 +161,7 @@ document.addEventListener("input", (e) => {
   isRecording((recording) => {
     if (!recording) return;
     
-    if (e.target.type != "text") {
+    if (!INPUTS_KEYDOWN.includes(e.target.type)) {
       // console.log("Input event:", e.target.type, "Recording:", recording, "value:", e.target.value);
       highlight(e.target);
       sendAction({
@@ -172,17 +176,25 @@ document.addEventListener("input", (e) => {
 
 document.addEventListener("keydown", (e) => {
   isRecording((recording) => {
-    if (e.target.type == "text") {
+    if (INPUTS_KEYDOWN.includes(e.target.type)) {
       // console.log("Input event:", e.target, "Recording:", recording, "value:", e.target.value);
       if (!recording) return;
 
       highlight(e.target);
+      let selector = getCssSelector(e.target);
+      let delta = undefined;
+      if (lastAction
+          && lastAction.type === "input" 
+          && lastAction.selector === selector
+      )
+          delta = 0.001;
+
       sendAction({
         type: e.target.type != "select-one" ? "input" : "select",
-        selector: getCssSelector(e.target),
+        selector: selector,
         value: e.target.value,
         originalType: e.target.nodeName
-      });
+      }, delta);
     }
   });
 }, true);
