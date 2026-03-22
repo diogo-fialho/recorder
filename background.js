@@ -5,31 +5,36 @@ let playing = false;
 let lastActionTime = Date.now();
 
 async function playActions(tabId) {
-  console.log("Playing actions:", actions, "Current step:", currentStep, "Playing:", playing);
+//   console.log("Playing actions:", actions, "Current step:", currentStep, "Playing:", playing);
 
   if (currentStep >= actions.length) return;
 
   while (playing && currentStep < actions.length) {
     const action = actions[currentStep]?.data;
-    currentStep++;
-
+    // 🔥 store current step
+    chrome.storage.local.set({ currentStep });
+    
     if (action.time) {
         await new Promise(r => setTimeout(r, action.time * 1000));
     }
-
+    
+    if (!playing) break;
+     
     chrome.tabs.sendMessage(tabId, {
         type: "execute-action",
         action: action
     });
     
+    currentStep++;
+    
     if (action.type === "redirect") {
         break;
     }
-
   }
 
   if (currentStep >= actions.length) {
     playing = false;
+    chrome.storage.local.set({ isPlaying: playing });
     currentStep = 0;
   }
 
@@ -61,7 +66,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "actions") {
         actions = message.actions;
 
-        console.log("Recorded actions:", actions);
+        // console.log("Recorded actions:", actions);
 
         chrome.storage.local.set({ actions: actions });
     }
@@ -69,18 +74,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (recording !== undefined && recording && message.type === "action") {
         actions.push(message);
 
-        console.log("Recorded action:", message);
-        console.log("All actions:", actions);
+        // console.log("Recorded action:", message);
+        // console.log("All actions:", actions);
 
         chrome.storage.local.set({ actions: actions });
     }
     
-    console.log("Received message:", message.type);
+    // console.log("Received message:", message.type);
     if (message.type === "toggle-play-recording") {
         if (playing) {
             playing = false;
+            chrome.storage.local.set({ isPlaying: playing });
         } else {
             playing = true;
+            chrome.storage.local.set({ isPlaying: playing });
             actions = message.actions;
 
             chrome.tabs.query({active:true,currentWindow:true}, tabs => {
@@ -91,11 +98,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "restart-play-recording") {
         currentStep = 0;
         playing = false;
+        chrome.storage.local.set({ isPlaying: playing });
     }
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-  console.log("Tab updated:", tabId, changeInfo);
+//   console.log("Tab updated:", tabId, changeInfo);
   if (changeInfo.status === "complete") {
     if (recording) {
         chrome.tabs.sendMessage(tabId, {

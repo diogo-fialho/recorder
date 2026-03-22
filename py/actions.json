@@ -1,43 +1,32 @@
 [
   {
-    "selector": "div.row:nth-of-type(2) > div.large-12.columns > ul > li:nth-of-type(11) > a",
-    "time": 6.124,
-    "type": "click"
+    "originalType": "NAVIGATION",
+    "time": 0.04,
+    "type": "redirect",
+    "url": "https://the-internet.herokuapp.com/"
   },
   {
-    "selector": "#dropdown",
-    "time": 1.158,
-    "type": "redirect",
+    "originalType": "A",
+    "selector": "div:nth-of-type(2) > div > ul > li:nth-of-type(11) > a",
+    "time": 3.048,
+    "type": "click",
     "url": "https://the-internet.herokuapp.com/dropdown"
   },
   {
+    "originalType": "SELECT",
     "selector": "#dropdown",
-    "time": 1.158,
+    "time": 0.805,
     "type": "click"
   },
   {
+    "originalType": "SELECT",
     "selector": "#dropdown",
-    "time": 1.101,
-    "type": "select",
-    "value": "1"
-  },
-  {
-    "selector": "#dropdown",
-    "time": 0.001,
-    "type": "click"
-  },
-  {
-    "selector": "#dropdown",
-    "time": 1.601,
-    "type": "click"
-  },
-  {
-    "selector": "#dropdown",
-    "time": 1.069,
+    "time": 0.984,
     "type": "select",
     "value": "2"
   },
   {
+    "originalType": "SELECT",
     "selector": "#dropdown",
     "time": 0.001,
     "type": "click"

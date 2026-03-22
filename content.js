@@ -104,7 +104,7 @@ function isRecording(callback) {
 }
 
 function playAction(action) {
-  console.log("Playing action:", action);
+  // console.log("Playing action:", action);
   
   if (action.type === "redirect") {
     window.location.href = action.url;
@@ -158,7 +158,7 @@ document.addEventListener("input", (e) => {
     if (!recording) return;
     
     if (e.target.type != "text") {
-      console.log("Input event:", e.target.type, "Recording:", recording, "value:", e.target.value);
+      // console.log("Input event:", e.target.type, "Recording:", recording, "value:", e.target.value);
       highlight(e.target);
       sendAction({
         type: e.target.type != "select-one" ? "input" : "select",
@@ -173,7 +173,7 @@ document.addEventListener("input", (e) => {
 document.addEventListener("keydown", (e) => {
   isRecording((recording) => {
     if (e.target.type == "text") {
-      console.log("Input event:", e.target, "Recording:", recording, "value:", e.target.value);
+      // console.log("Input event:", e.target, "Recording:", recording, "value:", e.target.value);
       if (!recording) return;
 
       highlight(e.target);
