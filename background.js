@@ -1,25 +1,28 @@
 let actions = [];
 let currentStep = 0;
 let recording = undefined;
-let playing = false;
+let playingTabId = undefined;
 let lastActionTime = Date.now();
+let currentSessionId;
+let currentLoopRun = 1;
+let numberRuns = 1;
 
-async function playActions(tabId) {
+async function playActions(tabId, sessionId) {
 //   console.log("Playing actions:", actions, "Current step:", currentStep, "Playing:", playing);
 
-  if (currentStep >= actions.length) return;
+  if (currentStep >= actions.length || playingTabId !== tabId) return;
 
-  while (playing && currentStep < actions.length) {
+  while (currentStep < actions.length) {
     const action = actions[currentStep]?.data;
     // 🔥 store current step
     chrome.storage.local.set({ currentStep });
     
+    console.log('preparing execute action for current step ', currentStep, 'current loop', currentLoopRun);
     if (action.time) {
         await new Promise(r => setTimeout(r, action.time * 1000));
     }
     
-    if (!playing) break;
-     
+    if (playingTabId != tabId || sessionId != currentSessionId) break;
     chrome.tabs.sendMessage(tabId, {
         type: "execute-action",
         action: action
@@ -33,9 +36,18 @@ async function playActions(tabId) {
   }
 
   if (currentStep >= actions.length) {
-    playing = false;
-    chrome.storage.local.set({ isPlaying: playing });
     currentStep = 0;
+    if (numberRuns > currentLoopRun) {
+        // wait 5 secs before continuing
+        await new Promise(r => setTimeout(r, 5000));
+        currentLoopRun++;
+        chrome.storage.local.set({ currentRun: currentLoopRun });
+        playActions(tabId, sessionId);
+    }
+    else {
+        playingTabId = undefined;
+        chrome.storage.local.set({ isPlaying: false });
+    }
   }
 
 }
@@ -82,21 +94,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     
     // console.log("Received message:", message.type);
     if (message.type === "toggle-play-recording") {
-        if (playing) {
-            playing = false;
-            chrome.storage.local.set({ isPlaying: playing });
+        if (playingTabId !== undefined) {
+            playingTabId = undefined;
+            chrome.storage.local.set({ isPlaying: false });
         } else {
-            playing = true;
-            chrome.storage.local.set({ isPlaying: playing });
             actions = message.actions;
-
+            numberRuns = message.tries || messageRuns;
             chrome.tabs.query({active:true,currentWindow:true}, tabs => {
-                playActions(tabs[0].id);
+                playingTabId = tabs[0].id;
+                currentSessionId = Date.now();
+                chrome.storage.local.set({ isPlaying: true, currentRun: currentLoopRun });
+                playActions(tabs[0].id, currentSessionId);
             });  
         }
     }
     if (message.type === "restart-play-recording") {
         currentStep = 0;
+        currentLoopRun = 1;
         playing = false;
         chrome.storage.local.set({ isPlaying: playing });
     }
@@ -104,17 +118,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
 //   console.log("Tab updated:", tabId, changeInfo);
-  if (changeInfo.status === "complete") {
-    if (recording) {
-        chrome.tabs.sendMessage(tabId, {
-            type: "navigation"
-        });
-    } 
-    else {  
-        playActions(tabId);
-    }
-  }
+    if (changeInfo.status === "loading" && tabId === playingTabId)
+        currentSessionId = Date.now();
 
+    if (changeInfo.status === "complete") {
+        if (recording) {
+            chrome.tabs.sendMessage(tabId, {
+                type: "navigation"
+            });
+        } 
+        else if (tabId === playingTabId) {  
+            playActions(tabId, currentSessionId);
+        }
+    }
 });
 
 chrome.action.onClicked.addListener(async (tab) => {

@@ -7,6 +7,8 @@ const restartBtn = document.getElementById("restart");
 const playBtn = document.getElementById("play");
 const dropzone = document.getElementById("dropzone");
 const preview = document.getElementById("preview");
+const triesInput = document.getElementById("tries");
+const infoLabel = document.getElementById("info-label");
 
 function updateButton(recording) {
   toggleBtn.textContent = recording ? "Stop Recording" : "Start Recording";
@@ -80,7 +82,8 @@ document.getElementById("play").addEventListener("click", () => {
 
     chrome.runtime.sendMessage({
       type: "toggle-play-recording",
-      actions: data.actions
+      actions: data.actions,
+      tries: parseInt(triesInput.value) || 1
     });
   });
 });
@@ -154,7 +157,7 @@ function renderActions(actions, currentStep = -1) {
 
     const isActive = index === currentStep;
     html += `
-      <div class="${
+      <div  class="${
         isActive ? "active" : ""
       }" style="padding:4px;">
         ${JSON.stringify(action)}
@@ -171,11 +174,18 @@ function updateMode(playing) {
     editor.style.display = "none";
     preview.style.display = "block";
     preview.classList.add("playing");
+    updateInfoLabel(undefined, true);
   } else {
     playBtn.textContent = "Play Recording";
     preview.classList.remove("playing");
+    updateInfoLabel("", false);
   }
 
+}
+
+function updateInfoLabel(text, visible = true) {
+  infoLabel.textContent = text || infoLabel.textContent;
+  infoLabel.style.display = visible ? "block" : "none";
 }
 
 chrome.storage.onChanged.addListener((changes, area) => {
@@ -186,6 +196,10 @@ chrome.storage.onChanged.addListener((changes, area) => {
       renderActions(data.actions || [], changes.currentStep.newValue);
     });
 
+  }
+
+  if (area === "local" && changes.currentRun) {
+    updateInfoLabel(`Run: ${changes.currentRun.newValue}`);
   }
 
   
