@@ -114,6 +114,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         playing = false;
         chrome.storage.local.set({ isPlaying: playing });
     }
+
+    if (message.type === "skip-to-step") {
+        const step = message.step;
+        currentStep = step;
+        chrome.storage.local.set({ currentStep });
+    }
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {

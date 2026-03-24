@@ -152,20 +152,28 @@ dropzone.addEventListener("drop", (e) => {
 function renderActions(actions, currentStep = -1) {
 
   let html = "";
-
+  preview.innerHTML = "";
   actions.forEach((action, index) => {
 
     const isActive = index === currentStep;
-    html += `
-      <div  class="${
-        isActive ? "active" : ""
-      }" style="padding:4px;">
-        ${JSON.stringify(action)}
-      </div>
-    `;
+    const actionDiv = document.createElement("div");
+    actionDiv.textContent = JSON.stringify(action);
+    actionDiv.style.padding = "4px";
+    if (isActive) {
+      actionDiv.classList.add("active");
+    }
+    actionDiv.addEventListener("dblclick", () => {
+      chrome.runtime.sendMessage({
+        type: "skip-to-step",
+        step: index
+      });
+    });
+    preview.appendChild(actionDiv);
   });
+}
 
-  preview.innerHTML = html;
+function testClick() {
+  alert("test");
 }
 
 function updateMode(playing) {
