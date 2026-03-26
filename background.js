@@ -29,7 +29,7 @@ async function playTabActions(playingTab) {
         
         playingTab.currentStep++;
         
-        if (action.type === "redirect") {
+        if (action.type === "redirect" || action.waitNavigation === true) {
             break;
         }
     }

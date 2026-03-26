@@ -224,17 +224,20 @@ chrome.runtime.onMessage.addListener((message) => {
     }
 
     if (message.type === "navigation") {
-      chrome.runtime.sendMessage({
-        type: "get-last-action"
-      }, (response) => {
-        const lastAction = response.lastAction?.data;
-        if (!lastAction || (lastAction.type !== "click" && lastAction.type !== "submit")) {
-          sendAction({
-            type: "redirect",
-            url: window.location.href,
-            originalType: "NAVIGATION"
+      isRecording((recording) => {
+          if (!recording) return;
+          chrome.runtime.sendMessage({
+            type: "get-last-action"
+          }, (response) => {
+            const lastAction = response.lastAction?.data;
+            if (!lastAction || (lastAction.type !== "click" && lastAction.type !== "submit")) {
+              sendAction({
+                type: "redirect",
+                url: window.location.href,
+                originalType: "NAVIGATION"
+              });
+            }
           });
-        }
       });
     }
 });
