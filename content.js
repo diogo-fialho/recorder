@@ -94,7 +94,9 @@ function sendAction(action, setDelta = undefined) {
 
   chrome.runtime.sendMessage({
     type: "action",
-    data: action
+    data: [
+      action
+    ]
   });
 
 }
@@ -107,19 +109,92 @@ function isRecording(callback) {
 
 }
 
-function playAction(action) {
-  // console.log("Playing action:", action);
-  
+function isPlaying(callback) {
+
+  chrome.storage.local.get("isPlaying", (data) => {
+    callback(data.isPlaying === true);
+  });
+
+}
+
+async function waitForElement(selector, timeout = 5000, forceWait = false) {
+
+  const start = Date.now();
+  if (forceWait && selector !== undefined) {
+    await new Promise(r => setTimeout(r, timeout));
+    const el = document.querySelector(selector);
+    if (el) return el;
+    throw new Error("Element not found after forced wait: " + selector);
+  }
+
+  while (Date.now() - start < timeout) {
+
+    if (selector !== undefined) {
+      const el = document.querySelector(selector);
+
+      if (el && el.offsetParent !== null) {
+        return el;
+      }
+    }
+    await new Promise(r => setTimeout(r, Math.min(1000, timeout + 100)));
+  }
+
+  if (selector === undefined) return null;
+
+  const el = document.querySelector(selector);
+  if (el) return el;
+  throw new Error("Element not found: " + selector);
+}
+
+
+async function handleAction(action) {
+  const element = await waitForElement(action.selector, (action.time ?? 0) * 1000, true);
+
   if (action.type === "redirect") {
     window.location.href = action.url;
     return;
   }
   
-  const element = document.querySelector(action.selector);
-  if (!element) {
-    console.warn("Element not found", action.selector);
+  if (!element) return;
+
+  if (action.type === "click") {
+    element.click();
+    if (action.originalType == "INPUT") {
+      element.focus();
+    }
+  }
+
+  if (action.type === "input") {
+    element.value = action.value;
+    element.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  if (action.type === "select") {
+    element.value = action.value;
+    element.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+}
+
+function playAction(action) {
+  console.log("Playing action:", action);
+
+  const element = 
+    waitForElement(action.selector, (action.time ?? 0) * 1000)
+    .catch((e) => {
+      console.warn("Element not found for action", action, e);
+      return null;
+    });
+  
+  if (action.type === "wait_for") {
     return;
   }
+
+  if (action.type === "redirect") {
+    window.location.href = action.url;
+    return;
+  }
+  
+  if (!element) return;
 
   if (action.type === "click") {
     element.click();
@@ -213,10 +288,14 @@ document.addEventListener("submit", (e) => {
 
 }, true);
 
-chrome.runtime.onMessage.addListener((message) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     if (message.type === "execute-action") {
-      playAction(message.action);
+      handleAction(message.action)
+        .then(() => sendResponse({ success: true }))
+        .catch((err) => sendResponse({ success: false, error: err.message }));
+
+      return true; // 🔥 VERY IMPORTANT (keeps channel open)
     }
 
     if (message.type === "start-recording") {

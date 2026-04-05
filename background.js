@@ -5,6 +5,33 @@ let lastActionTime = Date.now();
 let playingTabs = [];
 let lastActiveTabId;
 
+function executeAction(tabId, action) {
+
+  return new Promise((resolve, reject) => {
+
+    chrome.tabs.sendMessage(
+      tabId,
+      { type: "execute-action", action },
+      (response) => {
+
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError.message);
+          return;
+        }
+
+        if (!response || !response.success) {
+          reject(response?.error || "Unknown error");
+          return;
+        }
+
+        resolve();
+      }
+    );
+
+  });
+}
+
+
 async function playTabActions(playingTab) {
     if (playingTab.currentStep >= actions.length || playingTab.paused) return;
     let currentSessionId = playingTab.sessionId;
@@ -14,23 +41,20 @@ async function playTabActions(playingTab) {
             chrome.storage.local.set({ currentStep: playingTab.currentStep });
         }
 
-        console.log('preparing execute action for current step ', playingTab.currentStep, 'current loop', playingTab.currentLoopRun);
-        if (action.time) {
-            await new Promise(r => setTimeout(r, action.time * 1000));
-        }
+        // console.log('preparing execute action for current step ', playingTab.currentStep, 'current loop', playingTab.currentLoopRun);
+        // if (action.time) {
+        //     await new Promise(r => setTimeout(r, action.time * 1000));
+        // }
         
-        playingTab = playingTabs.find(t => t.id === playingTab.id); // update playingtab a bit weird
-        if (playingTab.paused || playingTab.sessionId != currentSessionId) break;
-        console.log('execute action for current step ', playingTab.currentStep, 'current loop', playingTab.currentLoopRun, playingTab);
-        chrome.tabs.sendMessage(playingTab.id, {
-            type: "execute-action",
-            action: action
-        });
-        
+        // playingTab = playingTabs.find(t => t.id === playingTab.id); // update playingtab a bit weird
+        // if (playingTab.paused || playingTab.sessionId != currentSessionId) break;
+        // console.log('execute action for current step ', playingTab.currentStep, 'current loop', playingTab.currentLoopRun, playingTab);
+        await executeAction(playingTab.id, action);
+
         playingTab.currentStep++;
         
         if (action.type === "redirect" || action.waitNavigation === true) {
-            break;
+            break; // will leave tab, stop current execution, on load complete will check if need to continue
         }
     }
 
@@ -86,7 +110,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     if (recording !== undefined && recording && message.type === "action") {
-        actions.push(message);
+        actions.push(
+            ...message.data.map((action) => ({
+                type: message.type,
+                data: action
+            })));
 
         // console.log("Recorded action:", message);
         // console.log("All actions:", actions);
@@ -160,7 +188,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
                 type: "navigation"
             });
         } 
-        else if (!playingTab.paused) {  
+        else if (playingTab && !playingTab.paused) {  
             playTabActions(playingTab);
         }
     }
