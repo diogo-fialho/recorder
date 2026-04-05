@@ -154,6 +154,25 @@ async function handleAction(action) {
     window.location.href = action.url;
     return;
   }
+
+  if (action.type === "if") {
+    const exists = !!element;
+    if (exists === action.exists) {
+
+      for (const subAction of action.then) {
+        await handleAction(subAction);
+      }
+
+    }
+    else if (exists && action.textIncludes) {
+      const text = element.innerText || element.value || "";
+      if (text.includes(action.textIncludes)) {
+        for (const subAction of action.then) {
+          await handleAction(subAction);
+        }
+      }
+    }
+  }
   
   if (!element) return;
 
@@ -274,19 +293,19 @@ document.addEventListener("keydown", (e) => {
   });
 }, true);
 
-document.addEventListener("submit", (e) => {
-    isRecording((recording) => {
-        if (!recording) return;
+// document.addEventListener("submit", (e) => {
+//     isRecording((recording) => {
+//         if (!recording) return;
 
-        highlight(e.target);
-        sendAction({
-            type: "submit",
-            selector: getCssSelector(e.target),
-            originalType: e.target.nodeName
-        });
-    });
+//         highlight(e.target);
+//         sendAction({
+//             type: "submit",
+//             selector: getCssSelector(e.target),
+//             originalType: e.target.nodeName
+//         });
+//     });
 
-}, true);
+// }, true);
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 

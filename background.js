@@ -126,33 +126,35 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "toggle-play-recording") {
         if (lastActiveTabId !== undefined) {
             let playingTab = playingTabs.find(t => t.id === lastActiveTabId);
-            lastActiveTabId = undefined;
-            playingTab.paused = true;
-            chrome.storage.local.set({ isPlaying: false });
+            if (!playingTab.paused) {
+                lastActiveTabId = undefined;
+                playingTab.paused = true;
+                chrome.storage.local.set({ isPlaying: false });
+                return;
+            }
         }
-        else {
-            actions = message.actions;
-            chrome.tabs.query({active:true,currentWindow:true}, tabs => {
-                let playingTab = playingTabs.find(t => t.id === tabs[0].id);
-                if (!playingTab) {
-                    playingTab = {
-                        id: tabs[0].id,
-                        currentStep: 0,
-                        currentLoopRun: 1,
-                        sessionId: Date.now()
-                    };
-                    
-                    playingTabs.push(playingTab);
-                }
+        
+        actions = message.actions;
+        chrome.tabs.query({active:true,currentWindow:true}, tabs => {
+            let playingTab = playingTabs.find(t => t.id === tabs[0].id);
+            if (!playingTab) {
+                playingTab = {
+                    id: tabs[0].id,
+                    currentStep: 0,
+                    currentLoopRun: 1,
+                    sessionId: Date.now()
+                };
                 
-                lastActiveTabId = playingTab.id;
-                playingTab.paused = false;
-                playingTab.numberRuns = message.tries || playingTab.numberRuns;
-                playingTab.sessionId = Date.now();
-                chrome.storage.local.set({ isPlaying: true, currentRun: playingTab.currentLoopRun });
-                playTabActions(playingTab);
-            });
-        }
+                playingTabs.push(playingTab);
+            }
+            
+            lastActiveTabId = playingTab.id;
+            playingTab.paused = false;
+            playingTab.numberRuns = message.tries || playingTab.numberRuns;
+            playingTab.sessionId = Date.now();
+            chrome.storage.local.set({ isPlaying: true, currentRun: playingTab.currentLoopRun });
+            playTabActions(playingTab);
+        });
     }
 
     if (message.type === "restart-play-recording") {
