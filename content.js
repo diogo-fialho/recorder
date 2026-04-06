@@ -147,7 +147,17 @@ async function waitForElement(selector, timeout = 5000, forceWait = false) {
 }
 
 
-async function handleAction(action) {
+
+function resolveValue(variables, value) {
+  if (!value.match(/{{(.*?)}}/g)) return value;
+
+  return value.replace(/{{(.*?)}}/g, (_, key) => {
+    return variables[key.trim()] || "";
+  });
+}
+
+
+async function handleAction(action, variables) {
   const element = await waitForElement(action.selector, (action.time ?? 0) * 1000, true);
 
   if (action.type === "redirect") {
@@ -160,7 +170,7 @@ async function handleAction(action) {
     if (exists === action.exists) {
 
       for (const subAction of action.then) {
-        await handleAction(subAction);
+        await handleAction(subAction, variables);
       }
 
     }
@@ -168,7 +178,7 @@ async function handleAction(action) {
       const text = element.innerText || element.value || "";
       if (text.includes(action.textIncludes)) {
         for (const subAction of action.then) {
-          await handleAction(subAction);
+          await handleAction(subAction, variables);
         }
       }
     }
@@ -184,12 +194,12 @@ async function handleAction(action) {
   }
 
   if (action.type === "input") {
-    element.value = action.value;
+    element.value = resolveValue(variables, action.value);
     element.dispatchEvent(new Event("input", { bubbles: true }));
   }
 
   if (action.type === "select") {
-    element.value = action.value;
+    element.value = resolveValue(variables, action.value);
     element.dispatchEvent(new Event("change", { bubbles: true }));
   }
 }
@@ -310,7 +320,7 @@ document.addEventListener("keydown", (e) => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     if (message.type === "execute-action") {
-      handleAction(message.action)
+      handleAction(message.action, message.variables)
         .then(() => sendResponse({ success: true }))
         .catch((err) => sendResponse({ success: false, error: err.message }));
 

@@ -5,13 +5,13 @@ let lastActionTime = Date.now();
 let playingTabs = [];
 let lastActiveTabId;
 
-function executeAction(tabId, action) {
+function executeAction(tabId, action, variables = {}) {
 
   return new Promise((resolve, reject) => {
 
     chrome.tabs.sendMessage(
       tabId,
-      { type: "execute-action", action },
+      { type: "execute-action", action, variables },
       (response) => {
 
         if (chrome.runtime.lastError) {
@@ -31,10 +31,11 @@ function executeAction(tabId, action) {
   });
 }
 
-
 async function playTabActions(playingTab) {
     if (playingTab.currentStep >= actions.length || playingTab.paused) return;
     let currentSessionId = playingTab.sessionId;
+    const { csvData } = await chrome.storage.local.get("csvData");
+
     while (playingTab.currentStep < actions.length) {
         const action = actions[playingTab.currentStep]?.data;
         if (lastActiveTabId === playingTab.id) {
@@ -49,8 +50,14 @@ async function playTabActions(playingTab) {
         // playingTab = playingTabs.find(t => t.id === playingTab.id); // update playingtab a bit weird
         // if (playingTab.paused || playingTab.sessionId != currentSessionId) break;
         // console.log('execute action for current step ', playingTab.currentStep, 'current loop', playingTab.currentLoopRun, playingTab);
-        await executeAction(playingTab.id, action);
 
+        if (csvData && csvData.length > 0 && csvData.length >= playingTab.currentLoopRun) {
+            let rundataset = csvData[playingTab.currentLoopRun - 1];
+            await executeAction(playingTab.id, action, rundataset);
+
+        } else {
+            await executeAction(playingTab.id, action);
+        }
         playingTab.currentStep++;
         
         if (action.type === "redirect" || action.waitNavigation === true) {

@@ -9,6 +9,7 @@ const dropzone = document.getElementById("dropzone");
 const preview = document.getElementById("preview");
 const triesInput = document.getElementById("tries");
 const infoLabel = document.getElementById("info-label");
+const csvInput = document.getElementById("csvInput");
 
 function updateButton(recording) {
   toggleBtn.textContent = recording ? "Stop Recording" : "Start Recording";
@@ -149,6 +150,67 @@ dropzone.addEventListener("drop", (e) => {
   reader.readAsText(file);
 });
 
+csvInput.addEventListener("change", (e) => {
+
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = function(event) {
+
+    const text = event.target.result;
+
+    const data = parseCSV(text);
+
+    chrome.storage.local.set({ csvData: data });
+
+    alert(`Loaded ${data.length} rows`);
+
+  };
+
+  reader.readAsText(file);
+
+});
+
+
+function parseCSV(text) {
+
+  const lines = text.trim().split("\n");
+
+  // detect separator
+  const separator = lines[0].includes(";") ? ";" : ",";
+
+  const headers = lines[0].split(separator).map(h => h.trim());
+
+  // special case: single column like your example
+  if (headers.length === 1) {
+
+    const key = headers[0];
+
+    return lines.slice(1).map(line => ({
+      [key]: line.replace(separator, "").trim()
+    }));
+
+  }
+
+  // normal CSV
+  return lines.slice(1).map(line => {
+
+    const values = line.split(separator);
+
+    const obj = {};
+
+    headers.forEach((h, i) => {
+      obj[h] = values[i]?.trim() || "";
+    });
+
+    return obj;
+
+  });
+}
+
+
 function renderActions(actions, currentStep = -1) {
 
   let html = "";
@@ -216,3 +278,5 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
 
 });
+
+
