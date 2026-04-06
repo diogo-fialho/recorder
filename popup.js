@@ -161,12 +161,31 @@ csvInput.addEventListener("change", (e) => {
 
     const text = event.target.result;
 
-    const data = parseCSV(text);
+    if (file.name.endsWith(".json"))
 
-    chrome.storage.local.set({ csvData: data });
+    try {
+      let data = undefined;
 
-    alert(`Loaded ${data.length} rows`);
+      if (file.name.endsWith(".json")) {
+        data = JSON.parse(text);
+        if (!Array.isArray(data)) {
+          alert("Invalid format: must be an array");
+          return;
+        }
+      }
+      else {
+        data = parseCSV(text);
+      }
 
+      chrome.storage.local.set({ csvData: data });
+      alert(`Loaded ${data.length} rows`);
+
+      csvInput.value = ""; // reset input
+      return;
+    } catch (err) {
+      alert("Invalid file");
+      return;
+    }
   };
 
   reader.readAsText(file);
